@@ -63,7 +63,7 @@ const Profile = (): JSX.Element => {
 
     return (
         <FlexCenter>
-            <StyledMessage>Здравствуйте, <BoldMessage>{userInfo.email}</BoldMessage></StyledMessage>
+            <StyledMessage>Здравствуйте, <BoldMessage>{userInfo.login}</BoldMessage></StyledMessage>
             <StyledButton onClick={handleExitClick}>Выйти</StyledButton>
         </FlexCenter>
     );

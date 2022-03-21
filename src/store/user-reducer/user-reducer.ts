@@ -6,7 +6,9 @@ import {saveAuthErrorMessage, saveUserData, updateAuthStatus, updateLoadingStatu
 export const initialState: UserReducerType = {
     authorizationStatus: AuthStatus.Unknown,
     userInfo: {
-        "email": "Oliver.conner@gmail.com",
+        id: 0,
+        token: '',
+        login: '',
     },
     authErrorMessage: '',
     isLoading: false,

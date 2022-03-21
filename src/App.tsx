@@ -1,6 +1,6 @@
 import React from 'react';
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
-import Auth from './components/auth/auth';
+import AuthHookForm from './components/auth/auth-hook-form';
 import Header from './components/header/header';
 import PageNotFound from './components/page-not-found/page-not-found';
 import PrivateRoute from './components/private-route/private-route';
@@ -15,7 +15,7 @@ function App(): JSX.Element {
             <Header/>
             <BrowserRouter>
                 <Routes>
-                    <Route path={AppRoute.SignIn} element={<Auth/>}/>
+                    <Route path={AppRoute.SignIn} element={<AuthHookForm/>}/>
                     <Route path={AppRoute.Profile} element={
                         <PrivateRoute>
                             <Profile/>

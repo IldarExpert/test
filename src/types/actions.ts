@@ -1,3 +1,4 @@
+import {AnyAction} from '@reduxjs/toolkit';
 import {Action} from 'redux';
 import {ThunkAction, ThunkDispatch} from 'redux-thunk';
 import {AxiosInstance} from 'axios';
@@ -10,6 +11,7 @@ export enum ActionType {
     saveAuthErrorMassage = 'user/save_auth_error_massage',
 }
 
-export type ThunkActionResult<R = Promise<void>> = ThunkAction<R, State, AxiosInstance, Action>;
+// export type ThunkActionResult<R = Promise<void>> = ThunkAction<R, State, AxiosInstance, Action>;
+export type ThunkActionResult<R = Promise<void>> = ThunkAction<R, State, unknown, AnyAction>;
 
 export type ThunkAppDispatch = ThunkDispatch<State, AxiosInstance, Action>;

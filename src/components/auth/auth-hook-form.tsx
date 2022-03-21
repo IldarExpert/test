@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {SubmitHandler, useForm} from 'react-hook-form';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
@@ -127,64 +128,32 @@ const StyledInputErrorMessage = styled.span`
     color: #E26F6F;
 `;
 
-const auth = () => {
+type Inputs = {
+    "user-email": string,
+    "user-password": string,
+    "agree": boolean,
+};
+
+const AuthHookForm = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const authStatus = useSelector(getAuthStatus);
     const isLoading = useSelector(getIsLoading);
     const authErrorMessage = useSelector(getAuthErrorMessage)
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [checked, setChecked] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [isErrorEmail, setIsErrorEmail] = useState(false);
-    const [isErrorPassword, setIsErrorPassword] = useState(false);
+    const [errorMessageFromServer, setErrorMessageFromServer] = useState('');
 
-    const handleEmailChange = (e: React.FocusEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-    };
-    const handlePasswordChange = (e: React.FocusEvent<HTMLInputElement>) => {
-        setPassword(e.target.value);
-    };
+    const {register, reset, handleSubmit, formState: {errors}} = useForm<Inputs>({mode: 'onChange'});
+
     const handleCheckBoxClick = () => {
         setChecked((prev) => !prev);
     }
 
-    const handleButtonClick = (e: React.FormEvent) => {
-        e.preventDefault();
-        const regExPassword = /(?=.*[a-zA-Z])(?=.*\d)/;
-        const regExEmail = /[-.\w]+@([\w-]+\.)+[\w-]+/g;
-        let passwordCorrect = regExPassword.test(password);
-        let emailCorrect = regExEmail.test(email);
-
-        if (authErrorMessage !== '') {
-            setErrorMessage(authErrorMessage);
-        }
-
-        if (!passwordCorrect) {
-            setErrorMessage('Пароль должен состоять минимум из одной буквы и цифры');
-            setIsErrorPassword(true);
-        } else {
-            setIsErrorPassword(false);
-        }
-
-        if (!emailCorrect) {
-            setErrorMessage('Введите корректный email (например test@test.ru)');
-            setIsErrorEmail(true);
-        } else {
-            setIsErrorEmail(false);
-        }
-
-        if (passwordCorrect && emailCorrect) {
-            setErrorMessage('');
-            dispatch(requireAuthorization(email, password, checked));
-        }
-
+    const handleOnSubmit: SubmitHandler<Inputs> = (data) => {
+        setErrorMessageFromServer('');
+        dispatch(requireAuthorization(data['user-email'], data['user-password'], checked));
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-    }
 
     useEffect(() => {
         if (authStatus === AuthStatus.Auth) {
@@ -194,7 +163,7 @@ const auth = () => {
 
     useEffect(() => {
         if (authErrorMessage !== '') {
-            setErrorMessage(authErrorMessage);
+            setErrorMessageFromServer(authErrorMessage);
         }
     }, [authErrorMessage])
 
@@ -202,43 +171,64 @@ const auth = () => {
     return (
         <FlexCenter>
             <Form
-                onSubmit={handleSubmit}
+                onSubmit={handleSubmit(handleOnSubmit)}
                 action="#"
             >
-                {errorMessage &&
+                {errorMessageFromServer &&
                 <ErrorMessage>
-                    <StyledPic>!</StyledPic><ErrorText>{errorMessage}</ErrorText>
+                    <StyledPic>!</StyledPic><ErrorText>{errorMessageFromServer}</ErrorText>
                 </ErrorMessage>}
+
+                {errors['user-password']?.type === 'pattern' &&
+                <ErrorMessage>
+                    <StyledPic>!</StyledPic><ErrorText>{errors['user-password']?.message}</ErrorText>
+                </ErrorMessage>}
+
+                {errors['user-email']?.type === 'pattern' &&
+                <ErrorMessage>
+                    <StyledPic>!</StyledPic><ErrorText>{errors['user-email']?.message}</ErrorText>
+                </ErrorMessage>}
+
                 <div>
                     <InputWrapper>
                         <Label htmlFor="user-email">Логин</Label>
                         <Input
-                            value={email}
-                            onChange={handleEmailChange}
                             type="email"
-                            name="user-email"
+                            {...register("user-email", {
+                                required: 'Обязательное поле',
+                                pattern: {
+                                    value: /[-.\w]+@([\w-]+\.)+[\w-]+/g,
+                                    message: 'Введите корректный email (например test@test.ru)',
+                                },
+
+                            })}
                             id="user-email"
-                            isError={isErrorEmail}
+                            isError={!!errors['user-email']}
                         />
-                        {isErrorEmail && <StyledInputErrorMessage>Обязательное поле</StyledInputErrorMessage>}
+                        {errors['user-email']?.type === 'required' &&
+                        <StyledInputErrorMessage>{errors['user-email']?.message}</StyledInputErrorMessage>}
                     </InputWrapper>
                     <InputWrapper>
                         <Label htmlFor="user-password">Пароль</Label>
                         <Input
-                            value={password}
-                            onChange={handlePasswordChange}
                             type="password"
-                            name="user-password"
+                            {...register("user-password", {
+                                required: "Обязательное поле",
+                                pattern: {
+                                    value: /(?=.*[a-zA-Z])(?=.*\d)/,
+                                    message: 'Пароль должен состоять минимум из одной буквы и цифры'
+                                },
+                            })}
                             id="user-password"
                             autoComplete="on"
-                            isError={isErrorPassword}
+                            isError={!!errors['user-password']}
                         />
-                        {isErrorPassword && <StyledInputErrorMessage>Обязательное поле</StyledInputErrorMessage>}
+                        {errors['user-password']?.type === 'required' &&
+                        <StyledInputErrorMessage>{errors['user-password']?.message}</StyledInputErrorMessage>}
                     </InputWrapper>
                     <FlexLabel>
                         <input
                             type="checkbox"
-                            name="agree"
                             checked={checked}
                             style={{display: 'none'}}
                             onChange={handleCheckBoxClick}
@@ -253,7 +243,6 @@ const auth = () => {
                 </div>
                 <div>
                     <StyledButton
-                        onClick={handleButtonClick}
                         type="submit"
                         disabled={isLoading}
                     >Войти
@@ -264,4 +253,4 @@ const auth = () => {
     );
 };
 
-export default auth;
+export default AuthHookForm;

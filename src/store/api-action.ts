@@ -1,39 +1,58 @@
 import {AuthStatus} from '../consts';
+import {server} from '../server/server';
 import {ThunkActionResult} from '../types/actions';
-import {RegData} from '../types/user-info';
 import {saveAuthErrorMessage, saveUserData, updateAuthStatus, updateLoadingStatus} from './actions';
 
-export const requireAuthorization = (email: string, password: string): ThunkActionResult => {
-    return async (dispatch, _getState, api) => {
+
+export const checkAuthStatus = (): ThunkActionResult => {
+    return async (dispatch, _getState, _extraArgument) => {
         dispatch(updateLoadingStatus(true));
 
-        setTimeout(() => {
-            const regData = localStorage.getItem('Register_data');
-            const userRegister: RegData | undefined = regData && JSON.parse(regData).find((item: RegData) => item.email === email);
-            if (!userRegister && regData) {
-                dispatch(saveAuthErrorMessage(`Пользователя ${email} не существует (есть test@test.ru, test1)`));
-            }
-
-            if (userRegister?.password === password) {
-                dispatch(saveUserData({email}))
+        try {
+            const token = localStorage.getItem('Register_data');
+            const response: any = await server.get(token);
+            console.log('response', response);
+            if (response.status === 200) {
                 dispatch(updateAuthStatus(AuthStatus.Auth));
-                dispatch(saveAuthErrorMessage(''))
+                dispatch(saveUserData(response.data));
             }
+        } catch (e) {
+            console.log('e', e);
+            dispatch(updateAuthStatus(AuthStatus.NoAuth));
+        }
 
-            if (userRegister?.password !== password) {
-                userRegister && dispatch(saveAuthErrorMessage(`Неверный пароль (есть test@test.ru, test1)`));
+        dispatch(updateLoadingStatus(false));
+    }
+}
+
+export const requireAuthorization = (login: string, password: string, agree: boolean): ThunkActionResult => {
+    return async (dispatch, _getState, _extraArgument) => {
+        dispatch(updateLoadingStatus(true));
+
+        try {
+            const response: any = await server.post({login, password});
+
+            if (response.status === 200) {
+                dispatch(updateAuthStatus(AuthStatus.Auth));
+                dispatch(saveUserData(response.data));
+                dispatch(saveAuthErrorMessage(''));
+                console.log(agree);
+                if (agree) localStorage.setItem('Register_data', response.data.token);
             }
+        } catch (e: any) {
+            console.log('e', e);
+            dispatch(saveAuthErrorMessage(e.data.error));
+        }
 
-            dispatch(updateLoadingStatus(false));
-        }, 2000)
+        dispatch(updateLoadingStatus(false));
     }
 }
 
 export const requireLogOut = (): ThunkActionResult => {
-    return async (dispatch, _getState, api) => {
+    return async (dispatch, _getState, _extraArgument) => {
         dispatch(updateLoadingStatus(true));
         dispatch(updateAuthStatus(AuthStatus.NoAuth));
         dispatch(updateLoadingStatus(false));
-
+        localStorage.removeItem('Register_data');
     }
 }

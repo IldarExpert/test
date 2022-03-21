@@ -3,19 +3,15 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {Provider} from 'react-redux';
 import App from './App';
+import {checkAuthStatus} from './store/api-action';
 import {rootReducer} from './store/root-reducer';
 
+let api: any;
 const store = configureStore({
     reducer: rootReducer,
 });
 
-localStorage.setItem('Register_data',
-    JSON.stringify([
-        {
-            email: 'test@test.ru',
-            password: 'test1',
-        },
-    ]));
+store.dispatch(checkAuthStatus());
 
 ReactDOM.render(
     <React.StrictMode>
